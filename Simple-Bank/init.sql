@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS speaktalk.enrich_stats_queue
     "er_d"  Int8,
     "er_h"  Int8
 )
-    ENGINE = Kafka('kafka:9092', 'enrichStats', 'enrich-stats-dev',
-                   'JSONEachRow') settings kafka_thread_per_consumer = 1, kafka_num_consumers = 3, kafka_handle_error_mode = 'stream';
+    ENGINE = Kafka('kafka:9092', 'baeldung', 'stats-dev',
+                   'JSONEachRow') settings kafka_thread_per_consumer = 1, kafka_num_consumers = 1, kafka_handle_error_mode = 'stream';
 
 
 
