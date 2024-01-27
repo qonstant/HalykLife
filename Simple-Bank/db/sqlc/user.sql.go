@@ -11,34 +11,42 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  username,
-  hashed_password,
-  full_name,
-  email
+    iin,
+    username,
+    hashed_password,
+    name,
+    surname,
+    email
 ) VALUES (
-  $1, $2, $3, $4
-) RETURNING username, hashed_password, full_name, email, created_at
+             $1, $2, $3, $4, $5, $6
+         ) RETURNING iin, username, hashed_password, name, surname, email, created_at
 `
 
 type CreateUserParams struct {
+	Iin            int64  `json:"iin"`
 	Username       string `json:"username"`
 	HashedPassword string `json:"hashed_password"`
-	FullName       string `json:"full_name"`
+	Name           string `json:"name"`
+	Surname        string `json:"surname"`
 	Email          string `json:"email"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
+		arg.Iin,
 		arg.Username,
 		arg.HashedPassword,
-		arg.FullName,
+		arg.Name,
+		arg.Surname,
 		arg.Email,
 	)
 	var i User
 	err := row.Scan(
+		&i.Iin,
 		&i.Username,
 		&i.HashedPassword,
-		&i.FullName,
+		&i.Name,
+		&i.Surname,
 		&i.Email,
 		&i.CreatedAt,
 	)
@@ -47,81 +55,49 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users
-WHERE username = $1
+WHERE iin = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, username string) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, username)
+func (q *Queries) DeleteUser(ctx context.Context, iin int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, iin)
 	return err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT username, hashed_password, full_name, email, created_at FROM users
-WHERE username = $1 LIMIT 1
+SELECT iin, username, hashed_password, name, surname, email, created_at FROM users
+WHERE iin = $1 LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, username)
+func (q *Queries) GetUser(ctx context.Context, iin int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, iin)
 	var i User
 	err := row.Scan(
+		&i.Iin,
 		&i.Username,
 		&i.HashedPassword,
-		&i.FullName,
+		&i.Name,
+		&i.Surname,
 		&i.Email,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
-const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT username, hashed_password, full_name, email, created_at FROM users
-WHERE email = $1 LIMIT 1
-`
-
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.Username,
-		&i.HashedPassword,
-		&i.FullName,
-		&i.Email,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const getUserByFullName = `-- name: GetUserByFullName :one
-SELECT username, hashed_password, full_name, email, created_at FROM users
-WHERE full_name = $1 LIMIT 1
-`
-
-func (q *Queries) GetUserByFullName(ctx context.Context, fullName string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByFullName, fullName)
-	var i User
-	err := row.Scan(
-		&i.Username,
-		&i.HashedPassword,
-		&i.FullName,
-		&i.Email,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const getUserForUpdate = `-- name: GetUserForUpdate :one
-SELECT username, hashed_password, full_name, email, created_at FROM users
-WHERE username = $1 LIMIT 1
+const getUsersForUpdate = `-- name: GetUsersForUpdate :one
+SELECT iin, username, hashed_password, name, surname, email, created_at FROM users
+WHERE iin = $1 LIMIT 1
 FOR NO KEY UPDATE
 `
 
-func (q *Queries) GetUserForUpdate(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserForUpdate, username)
+func (q *Queries) GetUsersForUpdate(ctx context.Context, iin int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUsersForUpdate, iin)
 	var i User
 	err := row.Scan(
+		&i.Iin,
 		&i.Username,
 		&i.HashedPassword,
-		&i.FullName,
+		&i.Name,
+		&i.Surname,
 		&i.Email,
 		&i.CreatedAt,
 	)
@@ -129,9 +105,9 @@ func (q *Queries) GetUserForUpdate(ctx context.Context, username string) (User, 
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT username, hashed_password, full_name, email, created_at FROM users
-ORDER BY username
-LIMIT $1
+SELECT iin, username, hashed_password, name, surname, email, created_at FROM users
+ORDER BY iin
+    LIMIT $1
 OFFSET $2
 `
 
@@ -150,9 +126,11 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 	for rows.Next() {
 		var i User
 		if err := rows.Scan(
+			&i.Iin,
 			&i.Username,
 			&i.HashedPassword,
-			&i.FullName,
+			&i.Name,
+			&i.Surname,
 			&i.Email,
 			&i.CreatedAt,
 		); err != nil {
@@ -169,50 +147,27 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 	return items, nil
 }
 
-const updateUserEmail = `-- name: UpdateUserEmail :one
-UPDATE users
-SET email = $2
-WHERE username = $1
-RETURNING username, hashed_password, full_name, email, created_at
-`
-
-type UpdateUserEmailParams struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-}
-
-func (q *Queries) UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, updateUserEmail, arg.Username, arg.Email)
-	var i User
-	err := row.Scan(
-		&i.Username,
-		&i.HashedPassword,
-		&i.FullName,
-		&i.Email,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
 const updateUserPassword = `-- name: UpdateUserPassword :one
 UPDATE users
 SET hashed_password = $2
-WHERE username = $1
-RETURNING username, hashed_password, full_name, email, created_at
+WHERE iin = $1
+    RETURNING iin, username, hashed_password, name, surname, email, created_at
 `
 
 type UpdateUserPasswordParams struct {
-	Username       string `json:"username"`
+	Iin            int64  `json:"iin"`
 	HashedPassword string `json:"hashed_password"`
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, updateUserPassword, arg.Username, arg.HashedPassword)
+	row := q.db.QueryRowContext(ctx, updateUserPassword, arg.Iin, arg.HashedPassword)
 	var i User
 	err := row.Scan(
+		&i.Iin,
 		&i.Username,
 		&i.HashedPassword,
-		&i.FullName,
+		&i.Name,
+		&i.Surname,
 		&i.Email,
 		&i.CreatedAt,
 	)

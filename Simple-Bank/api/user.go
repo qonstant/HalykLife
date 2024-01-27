@@ -4,34 +4,38 @@ import (
 	db "Simple-Bank/db/sqlc"
 	"Simple-Bank/util"
 	"database/sql"
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"log"
+	"net/http"
 )
 
 type createUserRequest struct {
+	Iin      int64  `json:"iin" binding:"required,min=5`
 	Username string `json:"username" binding:"required,alphanum"`
-	FullName string `json:"full_name" binding:"required,min=5`
+	Name     string `json:"name" binding:"required,min=5`
+	Surname  string `json:"surname" binding:"required,min=5`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
 type userResponse struct {
-	Username  string    `json:"username"`
-	FullName  string    `json:"full_name"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+	Iin            int64  `json:"iin"`
+	Username       string `json:"username"`
+	HashedPassword string `json:"hashed_password"`
+	Name           string `json:"name"`
+	Surname        string `json:"surname"`
+	Email          string `json:"email"`
 }
 
 func newUserResponse(user db.User) userResponse {
 	return userResponse{
-		Username:  user.Username,
-		FullName:  user.FullName,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
+		Iin:            user.Iin,
+		Username:       user.Username,
+		HashedPassword: user.HashedPassword,
+		Name:           user.Name,
+		Surname:        user.Surname,
+		Email:          user.Email,
 	}
 }
 
@@ -49,10 +53,12 @@ func (server *Server) createUser(ctx *gin.Context) {
 	}
 
 	arg := db.CreateUserParams{
+		Iin:            req.Iin,
 		Username:       req.Username,
-		HashedPassword: hashedPassword,
-		FullName:       req.FullName,
+		Name:           req.Name,
+		Surname:        req.Surname,
 		Email:          req.Email,
+		HashedPassword: hashedPassword,
 	}
 
 	user, err := server.store.CreateUser(ctx, arg)
@@ -76,13 +82,13 @@ func (server *Server) createUser(ctx *gin.Context) {
 }
 
 type loginUserRequest struct {
-	Username string `json:"username" binding:"required,alphanum"`
+	Iin      int64  `json:"iin"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
 type loginUserResponse struct {
 	AccessToken string       `json:"access_token"`
-	User       userResponse `json:"user"`
+	User        userResponse `json:"user"`
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {
@@ -91,7 +97,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	user, err := server.store.GetUser(ctx, req.Username)
+	user, err := server.store.GetUser(ctx, req.Iin)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))

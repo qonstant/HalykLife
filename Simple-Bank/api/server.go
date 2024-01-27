@@ -25,7 +25,7 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	server := &Server{
 		store:      store,
 		tokenMaker: tokenMaker,
-		config: config,
+		config:     config,
 	}
 
 	server.setupRouter()
@@ -47,14 +47,14 @@ func (server *Server) setupRouter() {
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
 
-	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
-	
-	authRoutes.POST("/accounts", server.createAccount)
-	authRoutes.GET("/accounts/:id", server.getAccount)
-	authRoutes.GET("/accounts", server.listAccounts)
-
-	authRoutes.POST("/transfers", server.createTransfer)
-	authRoutes.GET("/transfers", server.listTransfers)
+	//authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+	//
+	//authRoutes.POST("/accounts", server.createAccount)
+	//authRoutes.GET("/accounts/:id", server.getAccount)
+	//authRoutes.GET("/accounts", server.listAccounts)
+	//
+	//authRoutes.POST("/transfers", server.createTransfer)
+	//authRoutes.GET("/transfers", server.listTransfers)
 
 	server.router = router
 }
