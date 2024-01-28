@@ -1,0 +1,6 @@
+columns format version: 1
+4 columns:
+`iin` UInt64
+`username` String
+`action` String
+`timestamp` DateTime

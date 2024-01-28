@@ -1,78 +1,24 @@
-CREATE DATABASE IF NOT EXISTS speaktalk;
---
--- CREATE TABLE IF NOT EXISTS speaktalk.enrich_stats_queue (
---     city_id UInt64
--- )ENGINE = Kafka('kafka:9092', 'enrichStats', 'enrich-stats-dev','JSONEachRow');
+-- Создание базы данных
+CREATE DATABASE IF NOT EXISTS stats;
 
+-- Создание таблицы для очереди данных из Kafka
+CREATE TABLE stats.users_statistics_queue (
+                                              iin UInt64,
+                                              username varchar,
+                                              action varchar,
+                                              timestamp DateTime
+) ENGINE = Kafka('kafka:9092', 'baeldung', 'stats-dev','JSONEachRow') SETTINGS kafka_thread_per_consumer = 1, kafka_num_consumers = 1, kafka_handle_error_mode = 'stream';
 
-CREATE DATABASE IF NOT EXISTS speaktalk;
-
-CREATE TABLE IF NOT EXISTS speaktalk.enrich_stats_queue
-(
-    "city_id" Int64,
-    "country_iso_code"  LowCardinality(FixedString(50)),
-    "platform_id"  Int32,
-    "uniq" Int8,
-    "listener_id"  UUID,
-    "podcast_id"  Int64,
-    "episode_id"  Int64,
-    "time_point"  DateTime64(7, 'UTC'),
-    "podcast_time_point" DateTime64(7, 'UTC'),
-    "system"  LowCardinality(FixedString(50)),
-    "device"  LowCardinality(FixedString(50)),
-    "e_y"  Int16,
-    "e_m"  Int8,
-    "e_d"  Int8,
-    "e_h"  Int8,
-    "podcast_creation_time"  DateTime64(7, 'UTC'),
-    "podcast_rel_point"  DateTime64(7, 'UTC'),
-    "pr_y"  Int16,
-    "pr_m"  Int8,
-    "pr_d"  Int8,
-    "pr_h"  Int8,
-    "release_creation_time"  DateTime64(7, 'UTC'),
-    "release_rel_point"  DateTime64(7, 'UTC'),
-    "er_y"  Int16,
-    "er_m"  Int8,
-    "er_d"  Int8,
-    "er_h"  Int8
-)
-    ENGINE = Kafka('kafka:9092', 'baeldung', 'stats-dev',
-                   'JSONEachRow') settings kafka_thread_per_consumer = 1, kafka_num_consumers = 1, kafka_handle_error_mode = 'stream';
-
-
-
-CREATE TABLE IF NOT EXISTS speaktalk.enrich_stats (
-    "city_id" Int64,
-    "country_iso_code"  LowCardinality(FixedString(50)),
-    "platform_id"  Int32,
-    "uniq" Int8,
-    "listener_id"  UUID,
-    "podcast_id"  Int64,
-    "episode_id"  Int64,
-    "time_point"  DateTime64(7, 'UTC'),
-    "podcast_time_point" DateTime64(7, 'UTC'),
-    "system"  LowCardinality(FixedString(50)),
-    "device"  LowCardinality(FixedString(50)),
-    "e_y"  Int16,
-    "e_m"  Int8,
-    "e_d"  Int8,
-    "e_h"  Int8,
-    "podcast_creation_time"  DateTime64(7, 'UTC'),
-    "podcast_rel_point"  DateTime64(7, 'UTC'),
-    "pr_y"  Int16,
-    "pr_m"  Int8,
-    "pr_d"  Int8,
-    "pr_h"  Int8,
-    "release_creation_time"  DateTime64(7, 'UTC'),
-    "release_rel_point"  DateTime64(7, 'UTC'),
-    "er_y"  Int16,
-    "er_m"  Int8,
-    "er_d"  Int8,
-    "er_h"  Int8
+-- Создание таблицы для хранения статистики
+CREATE TABLE IF NOT EXISTS stats.users_statistics (
+                                                      iin UInt64,
+                                                      username varchar,
+                                                      action varchar,
+                                                      timestamp DateTime
 ) ENGINE = MergeTree()
-    PARTITION BY toYYYYMM(time_point)
-    ORDER BY tuple();
+    PARTITION BY toYYYYMM(timestamp)
+    ORDER BY (timestamp);
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS speaktalk.enrich_stats_mv TO speaktalk.enrich_stats AS
-SELECT * FROM speaktalk.enrich_stats_queue;
+-- Создание материализованного представления для автоматической вставки данных в основную таблицу
+CREATE MATERIALIZED VIEW IF NOT EXISTS stats.users_statistics_mv TO stats.users_statistics AS
+SELECT * FROM stats.users_statistics_queue;

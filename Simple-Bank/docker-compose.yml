@@ -37,7 +37,7 @@ services:
     ports:
       - "8123:8123"
     volumes:
-      - ./db:/var/lib/clickhouse
+      - ./DBClickHouse:/var/lib/clickhouse
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Монтируем SQL-скрипт
     depends_on:
       - kafka
