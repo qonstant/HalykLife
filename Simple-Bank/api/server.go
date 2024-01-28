@@ -5,7 +5,6 @@ import (
 	"Simple-Bank/token"
 	"Simple-Bank/util"
 	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,9 +46,11 @@ func (server *Server) setupRouter() {
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
 
-	//authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
-	//
-	//authRoutes.POST("/accounts", server.createAccount)
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker, server.store))
+
+	authRoutes.GET("/accounts", server.listUsers)
+	authRoutes.GET("/user/:iin", server.getQrForUser)
+
 	//authRoutes.GET("/accounts/:id", server.getAccount)
 	//authRoutes.GET("/accounts", server.listAccounts)
 	//

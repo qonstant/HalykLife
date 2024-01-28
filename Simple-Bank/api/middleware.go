@@ -1,6 +1,7 @@
 package api
 
 import (
+	db "Simple-Bank/db/sqlc"
 	"Simple-Bank/token"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ const (
 	authorizationPayloadKey = "authorization_payload"
 )
 
-func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
+func authMiddleware(tokenMaker token.Maker, store db.Store) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authorizationHeader := ctx.GetHeader(authorizationHeaderKey)
 
@@ -36,7 +37,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		}
 		authorizationType := strings.ToLower(fields[0])
 
-		if len(authorizationType) < 6{
+		if len(authorizationType) < 6 {
 			err := fmt.Errorf("unsupported authorization type %s", authorizationType)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
 			return
@@ -48,7 +49,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 			return
 		}
 		accessToken := fields[1]
-		payload, err := tokenMaker.VerifyToken(accessToken)
+		payload, err := tokenMaker.VerifyToken(accessToken, store, ctx)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
 			return

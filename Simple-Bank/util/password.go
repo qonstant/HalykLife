@@ -17,3 +17,6 @@ func HashPassword(password string) (string, error) {
 func CheckPassword(password string, hashPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashPassword), []byte(password))
 }
+func CheckRole(role bool, role_req bool) bool {
+	return role == role_req
+}

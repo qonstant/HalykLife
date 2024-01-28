@@ -1,7 +1,9 @@
 package token
 
 import (
+	db "Simple-Bank/db/sqlc"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"time"
 
 	"github.com/o1egl/paseto"
@@ -25,15 +27,15 @@ func NewPasetoMaker(symmetricKey string) (Maker, error) {
 	return maker, nil
 }
 
-func (maker *PasetoMaker) CreateToken(username string, duration time.Duration) (string, error) {
-	payload, err := NewPayload(username, duration)
+func (maker *PasetoMaker) CreateToken(username string, duration time.Duration, userRole string) (string, error) {
+	payload, err := NewPayload(username, duration, userRole)
 	if err != nil {
 		return "", err
 	}
 	return maker.paseto.Encrypt(maker.symmetricKey, payload, nil)
 }
 
-func (maker *PasetoMaker) VerifyToken(token string) (*Payload, error) {
+func (maker *PasetoMaker) VerifyToken(token string, store db.Store, ctx *gin.Context) (*Payload, error) {
 	payload := &Payload{}
 
 	err := maker.paseto.Decrypt(token, maker.symmetricKey, payload, nil)
@@ -43,6 +45,15 @@ func (maker *PasetoMaker) VerifyToken(token string) (*Payload, error) {
 
 	err = payload.Valid()
 	if err != nil {
+		return nil, err
+	}
+
+	role, err := store.GetRoleByUsername(ctx, payload.Username)
+
+	if err != nil {
+		return nil, err
+	}
+	if role != payload.UserRole {
 		return nil, err
 	}
 

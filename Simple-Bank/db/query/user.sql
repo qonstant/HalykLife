@@ -5,9 +5,10 @@ INSERT INTO users (
     hashed_password,
     name,
     surname,
-    email
+    email,
+    user_role
 ) VALUES (
-             $1, $2, $3, $4, $5, $6
+             $1, $2, $3, $4, $5, $6, $7
          ) RETURNING *;
 
 -- name: GetUser :one
@@ -34,3 +35,7 @@ WHERE iin = $1
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE iin = $1;
+
+-- name: GetRoleByUsername :one
+SELECT user_role FROM users
+WHERE username = $1 LIMIT 1;
